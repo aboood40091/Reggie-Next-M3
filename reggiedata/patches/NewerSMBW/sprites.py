@@ -7,6 +7,7 @@ from PyQt5 import QtCore, QtGui
 Qt = QtCore.Qt
 
 import spritelib as SLib
+import sprites_common as common
 
 ImageCache = SLib.ImageCache
 
@@ -45,7 +46,7 @@ class SpriteImage_SamuraiGuy(SLib.SpriteImage_Static):  # 19
             parent,
             1.5,
             ImageCache['SamuraiGuy'],
-            (-1, -4),
+            (-1, 20),
         )
 
     @staticmethod
@@ -91,6 +92,7 @@ class SpriteImage_PumpkinGoomba(SLib.SpriteImage_StaticMultiple):  # 22
 
         super().dataChanged()
 
+
 class SpriteImage_Thwomp(SLib.SpriteImage_StaticMultiple):  # 47
     def __init__(self, parent):
         super().__init__(
@@ -113,6 +115,7 @@ class SpriteImage_Thwomp(SLib.SpriteImage_StaticMultiple):  # 47
         else:
             self.image = ImageCache['Thwomp']
 
+
 class SpriteImage_GiantThwomp(SLib.SpriteImage_StaticMultiple):  # 48
     def __init__(self, parent):
         super().__init__(
@@ -134,6 +137,7 @@ class SpriteImage_GiantThwomp(SLib.SpriteImage_StaticMultiple):  # 48
             self.image = ImageCache['GiantThwompIce']
         else:
             self.image = ImageCache['GiantThwomp']
+
 
 class SpriteImage_FakeStarCoin(SLib.SpriteImage_Static):  # 49
     def __init__(self, parent):
@@ -240,6 +244,20 @@ class SpriteImage_BigPumpkin(SLib.SpriteImage_StaticMultiple):  # 157
         super().dataChanged()
 
 
+class SpriteImage_Thundercloud(SLib.SpriteImage_Static):  # 168
+    def __init__(self, parent):
+        super().__init__(
+            parent,
+            1.5,
+            ImageCache['Thundercloud'],
+            (-24, -40),
+        )
+
+    @staticmethod
+    def loadImages():
+        SLib.loadIfNotInImageCache('Thundercloud', 'thundercloud.png')
+
+
 class SpriteImage_Meteor(SLib.SpriteImage_StaticMultiple):  # 183
     @staticmethod
     def loadImages():
@@ -303,93 +321,43 @@ class SpriteImage_MidwayFlag(SLib.SpriteImage_StaticMultiple):  # 188
         super().dataChanged()
 
 
-class SpriteImage_TileEvent(SLib.SpriteImage_StaticMultiple):  # 191
+class SpriteImage_TileEventNewer(common.SpriteImage_TileEvent):  # 191
     def __init__(self, parent):
-        super().__init__(parent, 1.5)
-        self.aux2 = [SLib.AuxiliaryRectOutline(parent, 0, 0)]
-        self.aux = self.aux2
+        super().__init__(parent)
+        self.notAllowedTypes = (2, 5, 7, 13, 15)
 
-    def dataChanged(self):
-        super().dataChanged()
+    def getTileFromType(self, type_):
+        if type_ == 0:
+            return SLib.Tiles[55]
 
-        type_ = self.parent.spritedata[4] >> 4
-        self.width = (self.parent.spritedata[5] >> 4) * 16
-        self.height = (self.parent.spritedata[5] & 0xF) * 16
+        if type_ == 1:
+            return SLib.Tiles[48]
 
-        if not self.width:
-            self.width = 16
+        if type_ == 3:
+            return SLib.Tiles[52]
 
-        if not self.height:
-            self.height = 16
+        if type_ == 4:
+            return SLib.Tiles[51]
 
-        if type_ in [2, 5, 7, 13, 15]:
-            self.aux = self.aux2
-            self.spritebox.shown = True
-            self.image = None
+        if type_ == 6:
+            return SLib.Tiles[45]
 
-            if [self.width, self.height] == [16, 16]:
-                self.aux2[0].setSize(0, 0)
-                return
+        if type_ in [8, 9, 10, 11]:
+            row = self.parent.spritedata[2] & 0xF
+            col = self.parent.spritedata[3] >> 4
 
-        else:
-            self.aux = []
-            self.spritebox.shown = False
+            tilenum = 256 * (type_ - 8)
+            tilenum += row * 16 + col
 
-            if not type_:
-                tile = SLib.Tiles[55]
+            return SLib.Tiles[tilenum]
 
-            elif type_ == 1:
-                tile = SLib.Tiles[48]
+        if type_ == 12:
+            return SLib.Tiles[256 * 3 + 67]
 
-            elif type_ == 3:
-                tile = SLib.Tiles[52]
+        if type_ == 14:
+            return SLib.Tiles[256]
 
-            elif type_ == 4:
-                tile = SLib.Tiles[51]
-
-            elif type_ == 6:
-                tile = SLib.Tiles[45]
-
-            elif type_ in [8, 9, 10, 11]:
-                row = self.parent.spritedata[2] & 0xF
-                col = self.parent.spritedata[3] >> 4
-
-                tilenum = 256 * (type_ - 8)
-                tilenum += row * 16 + col
-
-                tile = SLib.Tiles[tilenum]
-
-            elif type_ == 12:
-                tile = SLib.Tiles[256 * 3 + 67]
-
-            elif type_ == 14:
-                tile = SLib.Tiles[256]
-
-            if tile:
-                self.image = tile.main
-
-            else:
-                self.image = SLib.Tiles[0x800 + 108].main
-
-        self.aux2[0].setSize(self.width * 1.5, self.height * 1.5)
-
-    def paint(self, painter):
-        if self.image is None:
-            return
-
-        painter.save()
-
-        painter.setOpacity(self.alpha)
-        painter.setRenderHint(painter.SmoothPixmapTransform)
-
-        for yTile in range(self.height // 16):
-            for xTile in range(self.width // 16):
-                painter.drawPixmap(xTile * 24, yTile * 24, self.image)
-
-        aux = self.aux2
-        aux[0].paint(painter, None, None)
-
-        painter.restore()
+        return None
 
 
 class SpriteImage_Topman(SLib.SpriteImage_Static):  # 210
@@ -552,9 +520,10 @@ ImageClasses = {
     49: SpriteImage_FakeStarCoin,
     57: SpriteImage_NewerKoopa,
     157: SpriteImage_BigPumpkin,
+    168: SpriteImage_Thundercloud,
     183: SpriteImage_Meteor,
     188: SpriteImage_MidwayFlag,
-    191: SpriteImage_TileEvent,
+    191: SpriteImage_TileEventNewer,
     210: SpriteImage_Topman,
     213: SpriteImage_CaptainBowser,
     279: SpriteImage_RockyBoss,

@@ -575,18 +575,40 @@ class AuxiliaryRectOutline(AuxiliarySpriteItem):
         self.BoundingRect = QtCore.QRectF(0, 0, width, height)
         self.setPos(xoff, yoff)
         self.hover = False
+        self.color = None
+        self.fillFlag = True
 
     def setSize(self, width, height, xoff=0, yoff=0):
         self.BoundingRect = QtCore.QRectF(0, 0, width, height)
         self.setPos(xoff, yoff)
+
+    def setColor(self, color):
+        if color is None:
+            self.color = None
+        else:
+            self.color = QtGui.QColor(color)
 
     def paint(self, painter, option, widget=None):
         if option is not None:
             painter.setClipRect(option.exposedRect)
             painter.setRenderHint(QtGui.QPainter.Antialiasing)
 
-        painter.setPen(OutlinePen)
-        painter.setBrush(OutlineBrush)
+        if self.color is None:
+            painter.setPen(OutlinePen)
+            if self.fillFlag:
+                painter.setBrush(OutlineBrush)
+        else:
+            pen = QtGui.QPen(OutlinePen)
+            self.color.setAlpha(pen.color().alpha())
+            pen.setColor(self.color)
+            painter.setPen(pen)
+
+            if self.fillFlag:
+                brush = QtGui.QBrush(OutlineBrush)
+                self.color.setAlpha(brush.color().alpha())
+                brush.setColor(self.color)
+                painter.setBrush(brush)
+
         painter.drawRect(self.BoundingRect)
 
 
@@ -723,9 +745,13 @@ class AuxiliaryImage_FollowsRect(AuxiliaryImage):
             newy = y + (h / 2) - (self.height / 2)
 
         # Translate that to relative coords
-        parent = self.parent
-        newx = newx - parent.x()
-        newy = newy - parent.y()
+        try:
+            parent = self.parent
+            newx = newx - parent.x()
+            newy = newy - parent.y()
+        except RuntimeError:
+            # Must catch this error -> if parent is deleted
+            return
 
         # Set the pos
         self.setPos(newx, newy)

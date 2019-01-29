@@ -68,10 +68,11 @@ version = map(int, QtCore.QT_VERSION_STR.split('.'))
 for v, c in zip(version, pqt_min):
     if c < v:
         # lower version
-        errormsg = 'Please update your copy of PyQt to ' + '.'.join(pqt_min) + \
-                   ' or greater. Currently running on: ' + QtCore.QT_VERSION_STR
+        #errormsg = 'Please update your copy of PyQt to ' + '.'.join(str(n) for n in pqt_min) + \
+        # ' or greater. Currently running on: ' + QtCore.QT_VERSION_STR
 
-        raise Exception(errormsg) from None
+        #raise Exception(errormsg) from None
+        pass
     elif c > v:
         # higher version
         break
@@ -3728,13 +3729,10 @@ class Area_NSMBW(AbstractParsedArea):
         self.tileset2 = ''
         self.tileset3 = ''
 
-        self.blocks = [None] * 14
-        self.blocks[
-            0] = b'Pa0_jyotyu\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        self.blocks = [b''] * 14
+        self.blocks[0] = b'Pa0_jyotyu' + bytes(128 - len('Pa0_jyotyu'))
         self.blocks[1] = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xc8\x00\x00\x00\x00\x00\x00\x00\x00'
-        self.blocks[2] = self.blocks[4] = self.blocks[5] = self.blocks[6] = self.blocks[8] = self.blocks[9] = \
-        self.blocks[10] = self.blocks[11] = self.blocks[12] = self.blocks[13] = b''
-        self.blocks[3] = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        self.blocks[3] = bytes(8)
         self.blocks[7] = b'\xff\xff\xff\xff'
 
         self.defEvents = 0
@@ -4205,6 +4203,8 @@ class Area_NSMBW(AbstractParsedArea):
         buffer5 = bytearray(24 * zcount)
         buffer9 = bytearray(24 * zcount)
         for z in Area.zones:
+            if z.objx < 0: z.objx = 0
+            if z.objy < 0: z.objy = 0
             bdngstruct.pack_into(buffer2, offset, z.yupperbound, z.ylowerbound, z.yupperbound2, z.ylowerbound2, i, 0xF)
             bgAstruct.pack_into(buffer4, offset, i, z.XscrollA, z.YscrollA, z.YpositionA, z.XpositionA, z.bg1A, z.bg2A,
                                 z.bg3A, z.ZoomA)
@@ -5637,33 +5637,31 @@ class ZoneItem(LevelEditorItem):
         """
 
         if self.GrabberRectTL.contains(event.pos()):
-            # start dragging
             self.dragging = True
-            self.dragstartx = int(event.pos().x() / 1.5)
-            self.dragstarty = int(event.pos().y() / 1.5)
             self.dragcorner = 1
-            event.accept()
         elif self.GrabberRectTR.contains(event.pos()):
             self.dragging = True
-            self.dragstartx = int(event.pos().x() / 1.5)
-            self.dragstarty = int(event.pos().y() / 1.5)
             self.dragcorner = 2
-            event.accept()
         elif self.GrabberRectBL.contains(event.pos()):
             self.dragging = True
-            self.dragstartx = int(event.pos().x() / 1.5)
-            self.dragstarty = int(event.pos().y() / 1.5)
             self.dragcorner = 3
-            event.accept()
         elif self.GrabberRectBR.contains(event.pos()):
             self.dragging = True
-            self.dragstartx = int(event.pos().x() / 1.5)
-            self.dragstarty = int(event.pos().y() / 1.5)
             self.dragcorner = 4
+        else:
+            self.dragging = False
+
+        if self.dragging:
+            # start dragging
+            self.dragstartx = int(event.scenePos().x() / 1.5)
+            self.dragstarty = int(event.scenePos().y() / 1.5)
+            self.draginitialx1 = self.objx
+            self.draginitialy1 = self.objy
+            self.draginitialx2 = self.objx + self.width
+            self.draginitialy2 = self.objy + self.height
             event.accept()
         else:
             LevelEditorItem.mousePressEvent(self, event)
-            self.dragging = False
 
     def mouseMoveEvent(self, event):
         """
@@ -5672,95 +5670,74 @@ class ZoneItem(LevelEditorItem):
 
         if event.buttons() != Qt.NoButton and self.dragging:
             # resize it
-            dsx = self.dragstartx
-            dsy = self.dragstarty
-            clickedx = int(event.pos().x() / 1.5)
-            clickedy = int(event.pos().y() / 1.5)
-            corner = self.dragcorner
+            clickedx = int(event.scenePos().x() / 1.5)
+            clickedy = int(event.scenePos().y() / 1.5)
 
-            cx = self.objx
-            cy = self.objy
+            x1 = self.draginitialx1
+            y1 = self.draginitialy1
+            x2 = self.draginitialx2
+            y2 = self.draginitialy2
 
-            checkwidth = self.width - 128
-            checkheight = self.height - 128
-            if corner == 1:
-                if clickedx >= checkwidth: clickedx = checkwidth - 1
-                if clickedy >= checkheight: clickedy = checkheight - 1
-            elif corner == 2:
-                if clickedx < 0: clickedx = 0
-                if clickedy >= checkheight: clickedy = checkheight - 1
-            elif corner == 3:
-                if clickedx >= checkwidth: clickedx = checkwidth - 1
-                if clickedy < 0: clickedy = 0
-            elif corner == 4:
-                if clickedx < 0: clickedx = 0
-                if clickedy < 0: clickedy = 0
+            oldx = self.x()
+            oldy = self.y()
+            oldw = self.width * 1.5
+            oldh = self.height * 1.5
 
-            if clickedx != dsx or clickedy != dsy:
-                # if (cx + clickedx - dsx) < 16: clickedx += (16 - (cx + clickedx - dsx))
-                # if (cy + clickedy - dsy) < 16: clickedy += (16 - (cy + clickedy - dsy))
+            deltax = clickedx - self.dragstartx
+            deltay = clickedy - self.dragstarty
 
-                self.dragstartx = clickedx
-                self.dragstarty = clickedy
-                xdelta = clickedx - dsx
-                ydelta = clickedy - dsy
+            MIN_X = 16
+            MIN_Y = 16
+            MIN_W = 300
+            MIN_H = 200
 
-                if corner == 1:
-                    self.objx += xdelta
-                    self.objy += ydelta
-                    self.dragstartx -= xdelta
-                    self.dragstarty -= ydelta
-                    self.width -= xdelta
-                    self.height -= ydelta
-                elif corner == 2:
-                    self.objy += ydelta
-                    self.dragstarty -= ydelta
-                    self.width += xdelta
-                    self.height -= ydelta
-                elif corner == 3:
-                    self.objx += xdelta
-                    self.dragstartx -= xdelta
-                    self.width -= xdelta
-                    self.height += ydelta
-                elif corner == 4:
-                    self.width += xdelta
-                    self.height += ydelta
+            if self.dragcorner == 1: # TL
+                x1 += deltax
+                y1 += deltay
+                if x1 < MIN_X: x1 = MIN_X
+                if y1 < MIN_Y: y1 = MIN_Y
+                if x2 - x1 < MIN_W: x1 = x2 - MIN_W
+                if y2 - y1 < MIN_H: y1 = y2 - MIN_H
 
-                if self.width < 16:
-                    self.objx -= (16 - self.width)
-                    self.width = 16
-                if self.height < 16:
-                    self.objy -= (16 - self.height)
-                    self.height = 16
+            elif self.dragcorner == 2: # TR
+                x2 += deltax
+                y1 += deltay
+                if y1 < MIN_Y: y1 = MIN_Y
+                if x2 - x1 < MIN_W: x2 = x1 + MIN_W
+                if y2 - y1 < MIN_H: y1 = y2 - MIN_H
 
-                if self.objx < 16:
-                    self.width -= (16 - self.objx)
-                    self.objx = 16
-                if self.objy < 16:
-                    self.height -= (16 - self.objy)
-                    self.objy = 16
+            elif self.dragcorner == 3: # BL
+                x1 += deltax
+                y2 += deltay
+                if x1 < MIN_X: x1 = MIN_X
+                if x2 - x1 < MIN_W: x1 = x2 - MIN_W
+                if y2 - y1 < MIN_H: y2 = y1 + MIN_H
 
-                oldrect = self.BoundingRect
-                oldrect.translate(cx * 1.5, cy * 1.5)
-                newrect = QtCore.QRectF(self.x(), self.y(), self.width * 1.5, self.height * 1.5)
-                updaterect = oldrect.united(newrect)
-                updaterect.setTop(updaterect.top() - 3)
-                updaterect.setLeft(updaterect.left() - 3)
-                updaterect.setRight(updaterect.right() + 3)
-                updaterect.setBottom(updaterect.bottom() + 3)
+            elif self.dragcorner == 4: # BR
+                x2 += deltax
+                y2 += deltay
+                if x2 - x1 < MIN_W: x2 = x1 + MIN_W
+                if y2 - y1 < MIN_H: y2 = y1 + MIN_H
 
-                self.UpdateRects()
-                self.setPos(int(self.objx * 1.5), int(self.objy * 1.5))
-                self.scene().update(updaterect)
+            self.objx = x1
+            self.objy = y1
+            self.width = x2 - x1
+            self.height = y2 - y1
 
-                mainWindow.levelOverview.update()
+            oldrect = QtCore.QRectF(oldx, oldy, oldw, oldh)
+            newrect = QtCore.QRectF(self.x(), self.y(), self.width * 1.5, self.height * 1.5)
+            updaterect = oldrect.united(newrect)
+            updaterect.setTop(updaterect.top() - 3)
+            updaterect.setLeft(updaterect.left() - 3)
+            updaterect.setRight(updaterect.right() + 3)
+            updaterect.setBottom(updaterect.bottom() + 3)
 
-                # Call the zoneRepositioned function of all
-                # the sprite auxs for this zone
-                for a in self.aux:
-                    a.zoneRepositioned()
+            self.UpdateRects()
+            self.setPos(int(self.objx * 1.5), int(self.objy * 1.5))
+            self.scene().update(updaterect)
 
-                SetDirty()
+            mainWindow.levelOverview.update()
+            SetDirty()
 
             event.accept()
         else:
@@ -5910,14 +5887,16 @@ class LocationItem(LevelEditorItem):
                 self.UpdateRects()
                 self.scene().update(updaterect)
                 SetDirty()
+                mainWindow.levelOverview.update()
 
                 if self.sizeChanged is not None:
                     self.sizeChanged(self, self.width, self.height)
 
-                if RealViewEnabled:
-                    for sprite in Area.sprites:
-                        if self.id in sprite.ImageObj.locationIDs and sprite.ImageObj.updateSceneAfterLocationMoved:
-                            self.scene().update()
+                # This code causes an error or something.
+                # if RealViewEnabled:
+                #     for sprite in Area.sprites:
+                #         if self.id in sprite.ImageObj.locationIDs and sprite.ImageObj.updateSceneAfterLocationMoved:
+                #             self.scene().update()
 
             event.accept()
         else:
@@ -5976,10 +5955,16 @@ class SpriteItem(LevelEditorItem):
 
         global DirtyOverride
         DirtyOverride += 1
-        self.setPos(
-            int((self.objx + self.ImageObj.xOffset) * 1.5),
-            int((self.objy + self.ImageObj.yOffset) * 1.5),
-        )
+        if SpriteImagesShown:
+            self.setPos(
+                int((self.objx + self.ImageObj.xOffset) * 1.5),
+                int((self.objy + self.ImageObj.yOffset) * 1.5),
+            )
+        else:
+            self.setPos(
+                int(self.objx * 1.5),
+                int(self.objy * 1.5),
+            )
         DirtyOverride -= 1
 
     def SetType(self, type):
@@ -6147,14 +6132,6 @@ class SpriteItem(LevelEditorItem):
         self.ImageObj = obj(self)
 
         self.UpdateDynamicSizing()
-        self.UpdateRects()
-        self.ChangingPos = True
-        self.setPos(
-            int((self.objx + self.ImageObj.xOffset) * 1.5),
-            int((self.objy + self.ImageObj.yOffset) * 1.5),
-        )
-        self.ChangingPos = False
-        if self.scene() is not None: self.scene().update()
 
     def UpdateDynamicSizing(self):
         """
@@ -6171,14 +6148,15 @@ class SpriteItem(LevelEditorItem):
             ))
 
         self.ImageObj.dataChanged()
-        self.UpdateRects()
 
-        self.ChangingPos = True
-        self.setPos(
-            int((self.objx + self.ImageObj.xOffset) * 1.5),
-            int((self.objy + self.ImageObj.yOffset) * 1.5),
-        )
-        self.ChangingPos = False
+        if SpriteImagesShown:
+            self.UpdateRects()
+            self.ChangingPos = True
+            self.setPos(
+                int((self.objx + self.ImageObj.xOffset) * 1.5),
+                int((self.objy + self.ImageObj.yOffset) * 1.5),
+            )
+            self.ChangingPos = False
 
         if self.scene() is not None:
             self.scene().update(CurrentRect)
@@ -6393,14 +6371,24 @@ class SpriteItem(LevelEditorItem):
         Sets a new position, through objx and objy
         """
         self.objx, self.objy = newobjx, newobjy
-        self.setPos((newobjx + self.ImageObj.xOffset) * 1.5, (newobjy + self.ImageObj.yOffset) * 1.5)
+        if SpriteImagesShown:
+            self.setPos((newobjx + self.ImageObj.xOffset) * 1.5, (newobjy + self.ImageObj.yOffset) * 1.5)
+        else:
+            self.setPos(newobjx * 1.5, newobjy * 1.5)
 
     def mousePressEvent(self, event):
         """
         Overrides mouse pressing events if needed for cloning
         """
         if event.button() != Qt.LeftButton or QtWidgets.QApplication.keyboardModifiers() != Qt.ControlModifier:
+            if not SpriteImagesShown:
+                oldpos = (self.objx, self.objy)
+
             LevelEditorItem.mousePressEvent(self, event)
+
+            if not SpriteImagesShown:
+                self.setNewObjPos(oldpos[0], oldpos[1])
+
             return
 
         newitem = SpriteItem(self.type, self.objx, self.objy, self.spritedata)
@@ -9490,7 +9478,11 @@ class QuickPaintConfigWidget(QtWidgets.QWidget):
         """
         Removes the current preset.
         """
-        os.remove("reggiedata/qpsp/" + self.comboBox_4.currentText() + ".qpp")
+        try:
+            os.remove("reggiedata/qpsp/" + self.comboBox_4.currentText() + ".qpp")
+        except FileNotFoundError:
+            return
+
         index = self.comboBox_4.currentIndex()
         self.comboBox_4.removeItem(index)
 
@@ -15306,13 +15298,13 @@ class ReggieTranslation:
                 35: 'Merge selected locations into a single large location',
                 36: 'Level Diagnostics Tool...',
                 37: 'Find and fix problems with the level',
-                38: 'Freeze[br]Objects',
+                38: 'Freeze Objects',
                 39: 'Make objects non-selectable',
-                40: 'Freeze[br]Sprites',
+                40: 'Freeze Sprites',
                 41: 'Make sprites non-selectable',
                 42: 'Freeze Entrances',
                 43: 'Make entrances non-selectable',
-                44: 'Freeze[br]Locations',
+                44: 'Freeze Locations',
                 45: 'Make locations non-selectable',
                 46: 'Freeze Paths',
                 47: 'Make paths non-selectable',
@@ -16016,7 +16008,7 @@ class ReggieTranslation:
 
 class LevelScene(QtWidgets.QGraphicsScene):
     """
-    GraphicsView subclass for the level scene
+    GraphicsScene subclass for the level scene
     """
 
     def __init__(self, *args):
@@ -16115,6 +16107,10 @@ class LevelScene(QtWidgets.QGraphicsScene):
                         destx += 24
                     desty += 24
                 painter.restore()
+
+    def getMainWindow(self):
+        global mainWindow
+        return mainWindow
 
 
 class LevelViewWidget(QtWidgets.QGraphicsView):
@@ -16997,7 +16993,7 @@ class InputBox(QtWidgets.QDialog):
 
 class AboutDialog(QtWidgets.QDialog):
     """
-    Shows the About info for Reggie
+    The About info for Reggie
     """
 
     def __init__(self):
@@ -18122,14 +18118,14 @@ class ZoneTab(QtWidgets.QWidget):
         self.Zone_modeldark.addItems(ZoneThemeValues)
         self.Zone_modeldark.setToolTip(trans.string('ZonesDlg', 21))
         if z.modeldark < 0: z.modeldark = 0
-        if z.modeldark >= len(ZoneThemeValues): z.modeldark = len(ZoneThemeValues)
+        if z.modeldark >= len(ZoneThemeValues): z.modeldark = len(ZoneThemeValues) - 1
         self.Zone_modeldark.setCurrentIndex(z.modeldark)
 
         self.Zone_terraindark = QtWidgets.QComboBox()
         self.Zone_terraindark.addItems(ZoneTerrainThemeValues)
         self.Zone_terraindark.setToolTip(trans.string('ZonesDlg', 23))
         if z.terraindark < 0: z.terraindark = 0
-        if z.terraindark >= len(ZoneTerrainThemeValues): z.terraindark = len(ZoneTerrainThemeValues)
+        if z.terraindark >= len(ZoneTerrainThemeValues): z.terraindark = len(ZoneTerrainThemeValues) - 1
         self.Zone_terraindark.setCurrentIndex(z.terraindark)
 
         self.Zone_vnormal = QtWidgets.QRadioButton(trans.string('ZonesDlg', 24))
@@ -18987,6 +18983,7 @@ class DiagnosticToolDialog(QtWidgets.QDialog):
             listItem = self.errorList.itemFromIndex(item)
             try:
                 listItem.fix()
+                SetDirty()
             except Exception:
                 pass  # fail silently
             self.errorList.takeItem(item.row())
@@ -21006,6 +21003,8 @@ class ReggieWindow(QtWidgets.QMainWindow):
 
         QtCore.QTimer.singleShot(100, self.levelOverview.update)
 
+        # call each toggle-button handler to set each feature correctly upon
+        # startup
         toggleHandlers = {
             self.HandleSpritesVisibility: SpritesShown,
             self.HandleSpriteImages: SpriteImagesShown,
@@ -21014,8 +21013,7 @@ class ReggieWindow(QtWidgets.QMainWindow):
             self.HandlePathsVisibility: PathsShown,
         }
         for handler in toggleHandlers:
-            handler(
-                toggleHandlers[handler])  # call each toggle-button handler to set each feature correctly upon startup
+            handler(toggleHandlers[handler])
 
         # let's restore the state and geometry
         # geometry: determines the main window position
@@ -23320,25 +23318,27 @@ class ReggieWindow(QtWidgets.QMainWindow):
         """
         Handle toggling of sprite images
         """
-        global SpriteImagesShown
+        global SpriteImagesShown, DirtyOverride, Initializing
 
         SpriteImagesShown = checked
 
         setSetting('ShowSpriteImages', SpriteImagesShown)
 
         if Area is not None:
+            DirtyOverride += 1
             for spr in Area.sprites:
                 spr.UpdateRects()
-                if SpriteImagesShown:
+                if SpriteImagesShown and not Initializing:
                     spr.setPos(
                         (spr.objx + spr.ImageObj.xOffset) * 1.5,
                         (spr.objy + spr.ImageObj.yOffset) * 1.5,
                     )
-                else:
+                elif not Initializing:
                     spr.setPos(
                         spr.objx * 1.5,
                         spr.objy * 1.5,
                     )
+            DirtyOverride -= 1
 
         self.scene.update()
 
@@ -24167,7 +24167,12 @@ class ReggieWindow(QtWidgets.QMainWindow):
         else:
             self.actions['deselect'].setEnabled(False)
 
-        if updateModeInfo: self.UpdateModeInfo()
+        if updateModeInfo:
+            global DirtyOverride
+
+            DirtyOverride += 1
+            self.UpdateModeInfo()
+            DirtyOverride -= 1
 
     def HandleObjPosChange(self, obj, oldx, oldy, x, y):
         """
@@ -24602,9 +24607,6 @@ class ReggieWindow(QtWidgets.QMainWindow):
             self.spriteDataEditor.data = obj.spritedata
 
             self.spriteDataEditor.update()
-
-            for field in self.spriteDataEditor.fields:
-                self.spriteDataEditor.HandleFieldUpdate(field)
 
         elif self.entranceEditorDock.isVisible():
             self.entranceEditor.setEntrance(self.selObj)

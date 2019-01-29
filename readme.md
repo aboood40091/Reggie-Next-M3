@@ -4,33 +4,24 @@
 
 ----------------------------------------------------------------
 
-DevBoard: http://horizonwii.net/  
-On GitHub: https://github.com/aboood40091/Reggie-Next-M3  
-
-----------------------------------------------------------------
-
-**NOTE: THIS IS A VERY UNSTABLE PRERELEASE VERSION! EXPECT CRASHES AND UNFINISHED THINGS!**
-
 Advanced level editor for New Super Mario Bros. Wii originally created by Treeki, Tempus and RoadrunnerWMC using Python, PyQt and Wii.py .
 
-"Next" version created by RoadrunnerWMC, based on official release 3.
+"Next" version created by RoadrunnerWMC, based on official release 3. Milestone 3 version by AboodXD and it aims to add more features requested by users.
 
 This release contains many improvements, in addition to code imports from the following Reggie! forks:
  * "ReggieMod 3.7.2" by JasonP27
  * "Reggie! Level Editor Mod (Newer Sprites) 3.8.1" by Kamek64 and MalStar1000
  * "NeweReggie! (Extension to Reggie! Level Editor)" by Treeki and angelsl
+ * "Reggie Updated" by RoadRunnerWMC
 
 Source code repository for Reggie! Next can be found at: 
-https://github.com/RoadrunnerWMC/Reggie-Next 
-
-
-Milestone 3 version by Stella/AboodXD and it aims to add more features requested by users.
+https://github.com/aboood40091/Reggie-Next-M3  
 
 ----------------------------------------------------------------
 
 ### Getting Started
 
-If you're on Windows and don't care about having the bleeding-edge latest features, you can use the official installer. This is by far the easiest setup method. The installer will take care of everything for you.
+If you're on Windows and don't care about having the bleeding-edge latest features, you can use the official release. This is by far the easiest setup method.
 
 If you are not on Windows or you want the very latest features, you'll need to run Reggie! from source.
 
@@ -39,8 +30,9 @@ If you are not on Windows or you want the very latest features, you'll need to r
 
 Download and install the following:
  * Python 3.4 (or newer) - http://www.python.org
- * PyQt 5.3 (or newer) - http://www.riverbankcomputing.co.uk/software/pyqt/intro
- * cx_Freeze 4.3 (or newer) (optional) - http://cx-freeze.sourceforge.net
+ * PyQt 5.4.1 (or newer) - http://www.riverbankcomputing.co.uk/software/pyqt/intro
+ * MinGW (for Windows only) - http://tdm-gcc.tdragon.net/
+ * Cython 0.25.2 - http://cython.org/
 
 Run the following in a command prompt:  
 `python3 reggie.py`  
@@ -56,43 +48,33 @@ Developers:
  * megazig - Code, Optimization, Data, RE
  * Omega - int(), Python, Testing
  * Pop006 - Sprite Images (NSMBW)
- * Tobias Amaranth - Sprite Data (NSMBW), Event Example Stage
- * Stella (AboodXD) - M3 Developer, Programmer, Optimization
+ * Tobias - Sprite Data (NSMBW), Event Example Stage
+ * AboodXD - M3 Developer, Programmer, Optimization
+ * Grop - Programmer, Sprite Data (NSMBW)
  * John10v10 - Quick Paint Tool Creator
  * RoadrunnerWMC - Reggie! Next Developer: Programmer, UI, Data, Sprite Images (NSMBW), Other
  * JasonP27 - ReggieMod Developer, Programmer, UI, Sprite Images (NSMBW)
- * Kinnay (Kamek64) - Reggie! Newer Sprites Developer, Programmer, Sprite Images (NSMBW, NewerSMBW), Sprite Data (NSMB2)
+ * Kinnay (Kamek64) - Reggie! Newer Sprites Developer, Programmer, Sprite Images (NSMBW, NewerSMBW)
  * ZementBlock - Sprite Data (NSMBW)
  * MalStar1000 - Sprite Images (NSMBW, NewerSMBW), Other
  * joietyfull64 - Sprite Data (NSMBW)
  * MidiGuyDP - Background Images & Names (NewerSMBW)
- * Grop - Sprite Data (NSMBW, NSMB2), Tileset Names (NSMB2)
- * Hiccup - Sprite Data (NSMB2), Sprite Images (NSMB2)
- * SnakeBlock (lolBoo) - Sprite Data (NSMBW), Sprite Images (NSMB2)
- * LifeMushroom - run-python34.bat
-
-Translators: (in alphabetical order, by language)
- * Translation Leader: Wolfy76700
- * Dutch: Grop
- * French: Wolfy76700
- * German: Atomic Python (mralpha)
- * Spanish: MalStar1000
- * Turkish: nlgzrgn
+ * SnakeBlock - Sprite Data (NSMBW)
 
 Other Testers and Contributors:
  * BulletBillTime, Dirbaio, EdgarAllen, FirePhoenix, GrandMasterJimmy, Mooseknuckle2000, MotherBrainsBrain, RainbowIE, Skawo, Sonicandtails, Tanks, Vibestar, angelsl, ant888, gamesquest1, iZackefx
- * Tobias Amaranth and Valeth - Text Tileset Addon
- * LifeMushroom - run-python34.bat
+ * Tobias and Valeth - Text Tileset Addon
 
 
 ### Dependencies/Libraries/Resources
 
 Python 3 - Python Software Foundation (https://www.python.org)  
 Qt 5 - Nokia (http://qt.nokia.com)  
-PyQt5 - Riverbank Computing (http://www.riverbankcomputing.co.uk/software/pyqt/intro)  
+PyQt5 - Riverbank Computing (http://www.riverbankcomputing.co.uk/software/pyqt/intro)
+MinGW - http://www.mingw.org/
+Cython - http://cython.org/
 Wii.py - megazig, Xuzz, The Lemon Man, Matt_P, SquidMan, Omega (https://github.com/grp/Wii.py) (included)  
 Interface Icons - FlatIcons (http://flaticons.net)  
-cx_Freeze - Anthony Tuininga (http://cx-freeze.sourceforge.net)
 
 
 ### License
@@ -253,4 +235,3 @@ Release 2: (April 2nd, 2010)
 Release 1: (March 19th, 2010)
  * Reggie! is finally released after 4 months of work and 18 test builds!
  * First release, may have bugs or incomplete sprites. Report any errors to us at the forums (link above).
-
