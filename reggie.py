@@ -2536,7 +2536,7 @@ def _LoadTileset(idx, name, reload=False):
             sourcey += 32
 
     # Load the tileset animations, if there are any
-    tileoffset = idx*256
+    tileoffset = idx * 256
     row = 0
     col = 0
 
@@ -3548,11 +3548,9 @@ class AbstractParsedArea(AbstractArea):
         self.LoadTilesetNames()  # block 1
         self.LoadOptions()  # block 2
         self.LoadEntrances()  # block 7
-        self.LoadSprites()  # block 8
         self.LoadZones()  # block 10 (also blocks 3, 5, and 6)
         self.LoadLocations()  # block 11
         self.LoadPaths()  # block 12 and 13
-
         # Load the editor metadata
         if self.block1pos[0] != 0x70:
             rddata = course[0x70:self.block1pos[0]]
@@ -3596,6 +3594,8 @@ class AbstractParsedArea(AbstractArea):
                 app.splashScreen.setProgress(trans.string('Splash', 1), 6)
 
             firstLoad = False
+
+        self.LoadSprites()  # block 8
 
         self.layers = [[], [], []]
 
@@ -4743,6 +4743,9 @@ class ObjectItem(LevelEditorItem):
         self.height = height
         self.objdata = None
 
+        self.TLGrabbed = self.TRGrabbed = self.BLGrabbed = self.BRGrabbed = False
+        self.MTGrabbed = self.MLGrabbed = self.MBGrabbed = self.MRGrabbed = False
+
         self.setFlag(self.ItemIsMovable, not ObjectsFrozen)
         self.setFlag(self.ItemIsSelectable, not ObjectsFrozen)
         self.UpdateRects()
@@ -5000,14 +5003,21 @@ class ObjectItem(LevelEditorItem):
         self.BoundingRect = QtCore.QRectF(0, 0, 24 * self.width, 24 * self.height)
         self.SelectionRect = QtCore.QRectF(0, 0, (24 * self.width) - 1, (24 * self.height) - 1)
 
-        self.GrabberRectTL = QtCore.QRectF(0, 0, 4.8, 4.8)
-        self.GrabberRectTR = QtCore.QRectF((24 * self.width) - 4.8, 0, 4.8, 4.8)
-        self.GrabberRectBL = QtCore.QRectF(0, (24 * self.height) - 4.8, 4.8, 4.8)
-        self.GrabberRectBR = QtCore.QRectF((24 * self.width) - 4.8, (24 * self.height) - 4.8, 4.8, 4.8)
-        self.GrabberRectMT = QtCore.QRectF(((24 * self.width) - 4.8) / 2, 0, 4.8, 4.8)
-        self.GrabberRectML = QtCore.QRectF(0, ((24 * self.height) - 4.8) / 2, 4.8, 4.8)
-        self.GrabberRectMB = QtCore.QRectF(((24 * self.width) - 4.8) / 2, (24 * self.height) - 4.8, 4.8, 4.8)
-        self.GrabberRectMR = QtCore.QRectF((24 * self.width) - 4.8, ((24 * self.height) - 4.8) / 2, 4.8, 4.8)
+        grabberwidth = 4.8 + self.width * self.height * 0.01
+
+        # make sure the grabbers don't overlap
+        grabberwidth = min(grabberwidth, self.width * 9, self.height * 9)
+
+        self.GrabberRectTL = QtCore.QRectF(0, 0, grabberwidth, grabberwidth)
+        self.GrabberRectTR = QtCore.QRectF((24 * self.width) - grabberwidth, 0, grabberwidth, grabberwidth)
+
+        self.GrabberRectBL = QtCore.QRectF(0, (24 * self.height) - grabberwidth, grabberwidth, grabberwidth)
+        self.GrabberRectBR = QtCore.QRectF((24 * self.width) - grabberwidth, (24 * self.height) - grabberwidth, grabberwidth, grabberwidth)
+
+        self.GrabberRectMT = QtCore.QRectF(((24 * self.width) - grabberwidth) / 2, 0, grabberwidth, grabberwidth)
+        self.GrabberRectML = QtCore.QRectF(0, ((24 * self.height) - grabberwidth) / 2, grabberwidth, grabberwidth)
+        self.GrabberRectMB = QtCore.QRectF(((24 * self.width) - grabberwidth) / 2, (24 * self.height) - grabberwidth, grabberwidth, grabberwidth)
+        self.GrabberRectMR = QtCore.QRectF((24 * self.width) - grabberwidth, ((24 * self.height) - grabberwidth) / 2, grabberwidth, grabberwidth)
 
         self.LevelRect = QtCore.QRectF(self.objx, self.objy, self.width, self.height)
 
@@ -5072,18 +5082,51 @@ class ObjectItem(LevelEditorItem):
         """
         global theme
 
-        if self.isSelected():
-            painter.setPen(QtGui.QPen(theme.color('object_lines_s'), 1, Qt.DotLine))
-            painter.drawRect(self.SelectionRect)
-            painter.fillRect(self.SelectionRect, theme.color('object_fill_s'))
+        if not self.isSelected():
+            return
 
+        painter.setPen(QtGui.QPen(theme.color('object_lines_s'), 1, Qt.DotLine))
+        painter.drawRect(self.SelectionRect)
+        painter.fillRect(self.SelectionRect, theme.color('object_fill_s'))
+
+        if self.TLGrabbed:
+            painter.fillRect(self.GrabberRectTL, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectTL, theme.color('object_lines_s'))
+
+        if self.TRGrabbed:
+            painter.fillRect(self.GrabberRectTR, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectTR, theme.color('object_lines_s'))
+
+        if self.BLGrabbed:
+            painter.fillRect(self.GrabberRectBL, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectBL, theme.color('object_lines_s'))
+
+        if self.BRGrabbed:
+            painter.fillRect(self.GrabberRectBR, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectBR, theme.color('object_lines_s'))
+
+        if self.MTGrabbed:
+            painter.fillRect(self.GrabberRectMT, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectMT, theme.color('object_lines_s'))
+
+        if self.MLGrabbed:
+            painter.fillRect(self.GrabberRectML, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectML, theme.color('object_lines_s'))
+
+        if self.MBGrabbed:
+            painter.fillRect(self.GrabberRectMB, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectMB, theme.color('object_lines_s'))
+
+        if self.MRGrabbed:
+            painter.fillRect(self.GrabberRectMR, theme.color('object_lines_r'))
+        else:
             painter.fillRect(self.GrabberRectMR, theme.color('object_lines_s'))
 
     def mousePressEvent(self, event):
@@ -5152,6 +5195,7 @@ class ObjectItem(LevelEditorItem):
             self.objsDragging = {}
 
         self.UpdateTooltip()
+        self.update()
 
     def UpdateObj(self, oldX, oldY, newSize):
         """
@@ -5232,7 +5276,7 @@ class ObjectItem(LevelEditorItem):
                     clickedx = 0
 
                 if clickedx != dsx or clickedy != dsy:
-                    self.dragstartx= clickedx
+                    self.dragstartx = clickedx
 
                     for obj in self.objsDragging:
                         oldHeight = self.objsDragging[obj][1] + 0
@@ -5256,7 +5300,7 @@ class ObjectItem(LevelEditorItem):
                             if newY >= 0 and newY + newHeight == obj.objy + obj.height:
                                 obj.objy = newY
                                 newSize[1] = newHeight
-                                obj.setPos(cx * 24, newY * 24)
+                                obj.setPos(obj.objx * 24, newY * 24)
 
                             else:
                                 self.objsDragging[obj][1] = oldHeight
@@ -5351,7 +5395,7 @@ class ObjectItem(LevelEditorItem):
                             if newY >= 0 and newY + newHeight == obj.objy + obj.height:
                                 obj.objy = newY
                                 newSize[1] = newHeight
-                                obj.setPos(cx * 24, newY * 24)
+                                obj.setPos(obj.objx * 24, newY * 24)
 
                             else:
                                 self.objsDragging[obj][1] = oldHeight
@@ -5440,6 +5484,16 @@ class ObjectItem(LevelEditorItem):
         self.RemoveFromSearchDatabase()
         Area.RemoveFromLayer(self)
         self.scene().update(self.x(), self.y(), self.BoundingRect.width(), self.BoundingRect.height())
+
+    def mouseReleaseEvent(self, event):
+        """
+        Overrides releasing the mouse after a move
+        """
+        LevelEditorItem.mouseReleaseEvent(self, event)
+
+        self.TLGrabbed = self.TRGrabbed = self.BLGrabbed = self.BRGrabbed = False
+        self.MTGrabbed = self.MLGrabbed = self.MBGrabbed = self.MRGrabbed = False
+        self.update()
 
 
 class AbstractBackground:
@@ -6130,6 +6184,10 @@ class SpriteItem(LevelEditorItem):
             gamedef.getImageClasses()[self.type].loadImages()
             SLib.SpriteImagesLoaded.add(self.type)
         self.ImageObj = obj(self)
+
+        # show auxiliary objects properly
+        for aux in self.ImageObj.aux:
+            aux.setVisible(SpriteImagesShown)
 
         self.UpdateDynamicSizing()
 
@@ -13832,6 +13890,7 @@ class ReggieTheme:
             'location_text': QtGui.QColor(255, 255, 255),  # Location text
             'object_fill_s': QtGui.QColor(255, 255, 255, 64),  # Select object fill
             'object_lines_s': QtGui.QColor(255, 255, 255),  # Selected object lines
+            'object_lines_r': QtGui.QColor(0, 148, 255),  # Clicked object corner
             'overview_entrance': QtGui.QColor(255, 0, 0),  # Overview entrance fill
             'overview_location_fill': QtGui.QColor(114, 42, 188, 50),  # Overview location fill
             'overview_location_lines': QtGui.QColor(0, 0, 0),  # Overview location lines
@@ -22230,17 +22289,20 @@ class ReggieWindow(QtWidgets.QMainWindow):
         """
         Handles an item being clicked in the Events tab
         """
+        # Write the current note to the event note editor
         noteText = item.text(1)
         self.eventNotesEditor.setText(noteText)
+
         selIdx = self.eventChooserItems.index(item)
-        if item.checkState(0):
+        isOn = (Area.defEvents & 1 << selIdx) == 1 << selIdx
+        if item.checkState(0) == Qt.Checked and not isOn:
             # Turn a bit on
             Area.defEvents |= 1 << selIdx
-        else:
-            # Turn a bit off (invert, turn on, invert)
-            Area.defEvents = ~Area.defEvents
-            Area.defEvents |= 1 << selIdx
-            Area.defEvents = ~Area.defEvents
+            SetDirty()
+        elif item.checkState(0) == Qt.Unchecked and isOn:
+            # Turn a bit off (mask out 1 bit)
+            Area.defEvents &= ~(1 << selIdx)
+            SetDirty()
 
     def handleEventNotesEdit(self):
         """
@@ -23826,7 +23888,7 @@ class ReggieWindow(QtWidgets.QMainWindow):
         self.UpdateTitle()
 
         # Update UI things
-        self.scene.update()
+        self.scene.update(0, 0, self.scene.width(), self.scene.height())
 
         self.levelOverview.Reset()
         self.levelOverview.update()
