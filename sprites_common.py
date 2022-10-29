@@ -2,9 +2,10 @@
 # -*- coding: latin-1 -*-
 
 # Reggie Next - New Super Mario Bros. Wii Level Editor
-# Milestone 3
-# Copyright (C) 2009-2014 Treeki, Tempus, angelsl, JasonP27, Kamek64,
-# MalStar1000, RoadrunnerWMC, 2017 Stella/AboodXD, John10v10
+# Milestone 4
+# Copyright (C) 2009-2020 Treeki, Tempus, angelsl, JasonP27, Kamek64,
+# MalStar1000, RoadrunnerWMC, AboodXD, John10v10, TheGrop, CLF78,
+# Zementblock, Danster64
 
 # This file is part of Reggie Next.
 
@@ -86,13 +87,7 @@ class SpriteImage_TileEvent(SLib.SpriteImage_StaticMultiple):  # 191
             return
 
         self.spritebox.shown = False
-
-        tile = self.getTileFromType(type_)
-
-        if tile:
-            self.image = tile.main
-        else:
-            self.image = SLib.Tiles[0x800 + 108].main
+        self.image = self.getTileFromType(type_)
 
     def getTileFromType(self, type):
         """
@@ -114,7 +109,7 @@ class SpriteImage_TileEvent(SLib.SpriteImage_StaticMultiple):  # 191
         painter.setRenderHint(painter.SmoothPixmapTransform)
 
         if self.pattern == 0 and self.shouldTile:
-            painter.drawTiledPixmap(0, 0, self.width * 1.5, self.height * 1.5, self.image)
+            painter.drawTiledPixmap(QtCore.QRectF(0, 0, self.width * 1.5, self.height * 1.5), self.image)
         elif self.pattern == 1 and self.shouldTile:
             for y_ in range(self.height >> 4):
                 y = y_ * 24
@@ -131,3 +126,52 @@ class SpriteImage_TileEvent(SLib.SpriteImage_StaticMultiple):  # 191
         self.aux[0].paint(painter, None, None)
 
         painter.restore()
+
+
+class SpriteImage_Switch(SLib.SpriteImage_StaticMultiple):  # 40, 41, 42, 153
+    def __init__(self, parent, scale=1.5):
+        super().__init__(parent, scale)
+        self.switchType = ''
+        self.styleType = 0
+
+    @staticmethod
+    def loadImages():
+
+        if 'QSwitch' not in ImageCache:
+            q = SLib.GetImg('q_switch.png', True)
+            ImageCache['QSwitch'] = QtGui.QPixmap.fromImage(q)
+            ImageCache['QSwitchU'] = QtGui.QPixmap.fromImage(q.mirrored(True, True))
+
+        if 'PSwitch' not in ImageCache:
+            p = SLib.GetImg('p_switch.png', True)
+            ImageCache['PSwitch'] = QtGui.QPixmap.fromImage(p)
+            ImageCache['PSwitchU'] = QtGui.QPixmap.fromImage(p.mirrored(True, True))
+
+        if 'ESwitch' not in ImageCache:
+            e = SLib.GetImg('e_switch.png', True)
+            ImageCache['ESwitch'] = QtGui.QPixmap.fromImage(e)
+            ImageCache['ESwitchU'] = QtGui.QPixmap.fromImage(e.mirrored(True, True))
+
+    def dataChanged(self):
+
+        upsideDown = self.parent.spritedata[5] & 1
+
+        if self.styleType != 0:
+            style = str(self.styleType)
+        else:
+            style = ''
+
+        if upsideDown:
+            self.image = ImageCache[self.switchType + 'SwitchU' + style]
+
+            if self.switchType != 'E':
+                self.xOffset -= 1
+                self.yOffset -= 1
+        else:
+            self.image = ImageCache[self.switchType + 'Switch' + style]
+            if self.switchType == 'E':
+                self.yOffset -= 3
+            else:
+                self.yOffset -= 2
+
+        super().dataChanged()

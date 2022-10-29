@@ -2,9 +2,10 @@
 # -*- coding: latin-1 -*-
 
 # Reggie Next - New Super Mario Bros. Wii Level Editor
-# Milestone 3
-# Copyright (C) 2009-2014 Treeki, Tempus, angelsl, JasonP27, Kamek64,
-# MalStar1000, RoadrunnerWMC, 2017 Stella/AboodXD, John10v10
+# Milestone 4
+# Copyright (C) 2009-2020 Treeki, Tempus, angelsl, JasonP27, Kamek64,
+# MalStar1000, RoadrunnerWMC, AboodXD, John10v10, TheGrop, CLF78,
+# Zementblock, Danster64
 
 # This file is part of Reggie Next.
 
@@ -252,6 +253,16 @@ class U8(WiiArchive):
                             ret.append(item2[len(item) + 1:])
                     return ret[1:]
         raise KeyError
+
+    def __contains__(self, key):
+        """
+        Returns whether the archive contains a file with a key
+        """
+        for item, _ in self.files:
+            if item == key:
+                return True
+
+        return False
 
     def __setitem__(self, key, val):
         """

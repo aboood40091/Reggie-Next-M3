@@ -12,6 +12,7 @@ bin/
 build/
 develop-eggs/
 dist/
+distrib/
 eggs/
 lib/
 lib64/
@@ -99,3 +100,9 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+
+# Others
+log.txt
+settings.ini
+settings.ini.bak
+reggiedata/patches/NewerSMBW/tilesetinfo.xml
